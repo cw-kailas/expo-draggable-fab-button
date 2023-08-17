@@ -1,0 +1,376 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    useAnimatedGestureHandler,
+    withTiming,
+    interpolateColor,
+} from 'react-native-reanimated';
+import { PanGestureHandler, GestureHandlerRootView } from 'react-native-gesture-handler';
+
+
+function DraggableFabButton({
+    xPositionValue = 6,
+    yPositionValue = 300,
+    visible = true,
+    onEnded = () => { }
+}: {
+    xPositionValue: number;
+    yPositionValue: number;
+    visible: boolean;
+    onEnded: () => void;
+}) {
+    const boundaryBottom = 50;
+    const boundaryTop = 50;
+    const buttonSize = 50;
+
+    const { width, height } = useWindowDimensions();
+    const closeButtonStartX = width / 2 - 25;
+    const closeButtonStartY = height - 600;
+
+
+    const posX = useSharedValue(xPositionValue);
+    const posY = useSharedValue(yPositionValue);
+    const lastDraggedX = useSharedValue(0);
+    const lastDraggedY = useSharedValue(0);
+    const draggableBtnTranslateY = useSharedValue(0);
+    const draggableBtnWidth = useSharedValue(buttonSize);
+    const draggableBtnColor = useSharedValue(0);
+    const closeBtnColor = useSharedValue(0);
+
+    const closeBtnScale = useSharedValue(1);
+    const isDragging = useSharedValue(false);
+    const isOverlapping = useSharedValue(false);
+    const isCollapsed = useSharedValue(false);
+
+    const [isVisibleState, setIsVisibleState] = useState(visible);
+
+    const leftOffset = 6;
+
+
+    useEffect(() => {
+        setIsVisibleState(visible)
+    }, [visible])
+
+    // useEffect(() => {
+    //     setTimeout(() => {
+    //         isCollapsed.value = true;
+    //         draggableBtnWidth.value = withTiming(50);
+    //     }, 3000)
+    // }, [])
+
+    // useEffect(() => {
+    //     // reset position to left side or right side
+    //     const leftDistance = lastDraggedX.value;
+    //     const rightDistance = width - leftDistance;
+
+    //     if (leftDistance + (buttonSize / 2) < rightDistance) {
+    //         posX.value = withTiming(leftOffset);
+    //     } else {
+    //         posX.value = withTiming(width - buttonSize - leftOffset);
+    //     }
+    // }, [visible])
+
+    const gestureHandler = useAnimatedGestureHandler({
+        onStart: (_, ctx) => {
+            ctx.startX = posX.value;
+            ctx.startY = posY.value;
+
+            // draggableBtnColor.value = withTiming(0, {
+            //     duration: 200,
+            // })
+            // closeBtnColor.value = withTiming(0, {
+            //     duration: 200,
+            // })
+
+            // draggableBtnTranslateY.value = withTiming(0);
+            // console.log("touch start")
+        },
+        onActive: (event, ctx) => {
+            posX.value = ctx.startX + event.translationX;
+            posY.value = ctx.startY + event.translationY;
+            isDragging.value = true;
+
+            // const buttonRadius = buttonSize / 2;
+
+            // // boundary check top
+            // if (posY.value < boundaryTop) {
+            //     posY.value = boundaryTop;
+            // }
+
+            // if (posY.value > height - boundaryBottom - buttonSize) {
+            //     posY.value = height - boundaryBottom - buttonSize;
+            // }
+
+            // if (posX.value < leftOffset) {
+            //     posX.value = leftOffset;
+            // }
+
+            // if (posX.value > width - buttonSize - leftOffset) {
+            //     posX.value = width - buttonSize - leftOffset;
+            // }
+
+            // get current position of draggable button and close button
+            // const draggableButtonStartX = posX.value;
+            // const draggableButtonStartY = posY.value;
+
+
+            // // get the center of the draggable button and close button
+            // const draggableButtonCenterX = draggableButtonStartX + buttonRadius;
+            // const draggableButtonCenterY = draggableButtonStartY + buttonRadius;
+            // const closeButtonCenterX = closeButtonStartX + buttonRadius;
+            // const closeButtonCenterY = closeButtonStartY + buttonRadius;
+
+            // const distance = Math.sqrt(
+            //     Math.pow(draggableButtonCenterX - closeButtonCenterX, 2) +
+            //     Math.pow(draggableButtonCenterY - closeButtonCenterY, 2)
+            // );
+
+            // // if the distance between the two centers is less than the sum of the radii, then they overlap
+            // if (distance < buttonRadius + buttonRadius) {
+            //     console.log('overlap')
+
+            //     if (!isOverlapping.value) {
+            //         isOverlapping.value = true;
+
+            //         closeBtnScale.value = withTiming(1.2, {
+            //             duration: 200,
+            //         });
+            //     }
+            // } else {
+            //     isOverlapping.value = false;
+            //     console.log('no overlap')
+
+            //     closeBtnScale.value = withTiming(1, {
+            //         duration: 200,
+            //     });
+            // }
+        },
+        onEnd: (_) => {
+            lastDraggedX.value = posX.value;
+            lastDraggedY.value = posY.value;
+            isDragging.value = false;
+
+            // const leftDistance = lastDraggedX.value;
+            // const rightDistance = width - leftDistance;
+
+
+            // if (leftDistance + (buttonSize / 2) < rightDistance) {
+            //     posX.value = withTiming(leftOffset);
+            // } else {
+            //     posX.value = withTiming(width - buttonSize - leftOffset);
+            // }
+        },
+        onFinish: (_, ctx) => {
+            // closeBtnScale.value = withTiming(1);
+            // draggableBtnTranslateY.value = withTiming(1);
+        },
+    });
+
+
+
+    const draggableButtonAnimatedStyle = useAnimatedStyle(() => {
+        const backgroundColor = interpolateColor(
+            draggableBtnColor.value,
+            [0, 1],
+            ["#00afa0", "#7fd7cf"],
+        )
+
+
+
+        return {
+            backgroundColor,
+            width: draggableBtnWidth.value,
+            transform: [
+                {
+                    translateX: posX.value,
+                },
+                {
+                    translateY: posY.value,
+                },
+            ],
+        };
+    });
+
+    const counterTextAnimatedStyle = useAnimatedStyle(() => {
+        const backgroundColor = interpolateColor(
+            closeBtnColor.value,
+            [0, 1],
+            ["#e53012", "#f29788"],
+        )
+
+        return {
+            backgroundColor,
+        };
+    });
+
+
+
+    const closeButtonAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [
+                {
+                    translateY: draggableBtnTranslateY.value * 100
+                },
+                {
+                    scale: closeBtnScale.value
+                }
+            ],
+        };
+    });
+
+
+
+
+    const styles = useMemo(() => StyleSheet.create({
+
+        box: {
+            width: 50,
+            height: 50,
+            borderRadius: 25,
+            backgroundColor: 'teal',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+        },
+        text: {
+            color: 'white',
+            marginRight: 8,
+            // fontFamily: 'regular',
+            // fontWeight: 'bold',
+        },
+        counterTextWrapper: {
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            borderRadius: 10,
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 20,
+            height: 20,
+        },
+        counterText: {
+            color: 'white',
+            // fontFamily: 'regular',
+            // fontWeight: 'bold',
+        },
+    }), [isCollapsed])
+
+    return (
+        <>
+            <PanGestureHandler
+                onEnded={() => {
+                    setTimeout(() => {
+                        draggableBtnColor.value = withTiming(1, {
+                            duration: 1000,
+                        });
+                        closeBtnColor.value = withTiming(1, {
+                            duration: 1000,
+                        })
+
+                    }, 1000)
+
+                    if (isOverlapping.value) {
+                        setIsVisibleState(false)
+                        onEnded();
+
+                        // posX.value = withTiming(width - afterCollapseWidth - leftOffset);
+                        // posY.value = withTiming(height - 300);
+
+                    }
+                }}
+                onGestureEvent={gestureHandler}>
+                {
+                    isVisibleState ? (
+                        <Animated.View
+                            style={[styles.box, draggableButtonAnimatedStyle]}
+                        >
+                            <Animated.View
+                                style={[
+                                    styles.counterTextWrapper,
+                                    counterTextAnimatedStyle
+                                ]}
+                            >
+                                <Text style={styles.counterText}>
+                                    {0 > 9 ? '9+' : 0}
+                                </Text>
+                            </Animated.View>
+                        </Animated.View>
+                    ) : (
+                        <Animated.View />
+                    )
+                }
+            </PanGestureHandler>
+
+
+            <PanGestureHandler >
+                <Animated.View
+                    style={[
+                        {
+                            backgroundColor: 'black',
+                            opacity: 0.5,
+                            position: 'absolute',
+                            left: closeButtonStartX,
+                            top: closeButtonStartY,
+                            width: 50,
+                            height: 50,
+                            borderRadius: 25,
+                        },
+                        closeButtonAnimatedStyle
+                    ]}
+                />
+            </PanGestureHandler>
+        </>
+    );
+}
+
+
+export default function App() {
+    const { height } = useWindowDimensions();
+    const [visible, setVisible] = useState(true)
+
+    const styles = useMemo(() => StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: 'pink',
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+        }
+    }), [])
+
+    return (
+        <GestureHandlerRootView style={styles.container}>
+            <TouchableOpacity
+                style={{
+                    backgroundColor: 'red',
+                    position: 'absolute',
+                    top: 100,
+                    left: 50,
+                    padding: 10,
+                    borderRadius: 10,
+                }}
+                onPress={() => {
+                    setVisible(true)
+                }}
+            >
+                <Text>show</Text>
+            </TouchableOpacity>
+            <DraggableFabButton
+                xPositionValue={6}
+                yPositionValue={height - 400}
+                visible={visible}
+                onEnded={() => {
+                    setVisible(false)
+                }}
+            />
+        </GestureHandlerRootView>
+    )
+}
+
+
